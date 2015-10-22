@@ -145,6 +145,14 @@ public class MeetExtensionsHandler
         {
             handleRayoIQ((RayoIqProvider.DialIq) packet);
         }
+        else if (packet instanceof RayoIqProvider.HoldIq)
+        {
+            handleRayoIQ((RayoIqProvider.HoldIq) packet);
+        }
+        else if (packet instanceof RayoIqProvider.UnHoldIq)
+        {
+            handleRayoIQ((RayoIqProvider.UnHoldIq) packet);
+        }
         else if (packet instanceof Message)
         {
             handleMessage((Message) packet);
@@ -248,6 +256,7 @@ public class MeetExtensionsHandler
 
     private void handleMuteIq(MuteIq muteIq)
     {
+    	logger.info(muteIq.toXML());
         Boolean doMute = muteIq.getMute();
         String jid = muteIq.getJid();
 
@@ -291,7 +300,9 @@ public class MeetExtensionsHandler
 
     private boolean acceptRayoIq(Packet p)
     {
-        return p instanceof RayoIqProvider.DialIq;
+        return (p instanceof RayoIqProvider.DialIq 
+        		|| p instanceof RayoIqProvider.HoldIq
+        		|| p instanceof RayoIqProvider.UnHoldIq);
     }
 
     private void handleRayoIQ(RayoIqProvider.DialIq dialIq)
@@ -360,6 +371,108 @@ public class MeetExtensionsHandler
         reply.setPacketID(originalPacketId);
 
         smackXmpp.getXmppConnection().sendPacket(reply);
+    }
+    
+    private void handleRayoIQ(RayoIqProvider.HoldIq holdIq)
+    {
+        String from = holdIq.getFrom();
+        
+        String to = holdIq.getTo();
+        
+        String jid = holdIq.getJid();
+        
+        logger.info(from);
+        
+        logger.info(to);
+        
+        logger.info("Jid : " + jid);
+
+        JitsiMeetConference conference = getConferenceForMucJid(from);
+        
+        logger.info(conference);
+
+        if (conference == null)
+        {
+            logger.debug("Hold error: room not found for JID: " + from);
+            return;
+        }
+
+        ChatRoomMemberRole role = conference.getRoleForMucJid(from);
+
+        if (role == null)
+        {
+            // Only room members are allowed to send requests
+            IQ error = createErrorResponse(
+                holdIq, new XMPPError(XMPPError.Condition.forbidden));
+
+            smackXmpp.getXmppConnection().sendPacket(error);
+
+            return;
+        }
+
+        if (ChatRoomMemberRole.MODERATOR.compareTo(role) < 0)
+        {
+            // Moderator permission is required
+            IQ error = createErrorResponse(
+                holdIq, new XMPPError(XMPPError.Condition.not_allowed));
+
+            smackXmpp.getXmppConnection().sendPacket(error);
+
+            return;
+        }
+        conference.handleHoldRequest(from, jid, true);
+
+    }
+    
+    private void handleRayoIQ(RayoIqProvider.UnHoldIq unHoldIq)
+    {
+        String from = unHoldIq.getFrom();
+        
+        String to = unHoldIq.getTo();
+        
+        String jid = unHoldIq.getJid();
+        
+        logger.info(from);
+        
+        logger.info(to);
+        
+        logger.info("Jid : " + jid);
+
+        JitsiMeetConference conference = getConferenceForMucJid(from);
+        
+        logger.info(conference);
+
+        if (conference == null)
+        {
+            logger.debug("Hold error: room not found for JID: " + from);
+            return;
+        }
+
+        ChatRoomMemberRole role = conference.getRoleForMucJid(from);
+
+        if (role == null)
+        {
+            // Only room members are allowed to send requests
+            IQ error = createErrorResponse(
+                unHoldIq, new XMPPError(XMPPError.Condition.forbidden));
+
+            smackXmpp.getXmppConnection().sendPacket(error);
+
+            return;
+        }
+
+        if (ChatRoomMemberRole.MODERATOR.compareTo(role) < 0)
+        {
+            // Moderator permission is required
+            IQ error = createErrorResponse(
+                unHoldIq, new XMPPError(XMPPError.Condition.not_allowed));
+
+            smackXmpp.getXmppConnection().sendPacket(error);
+
+            return;
+        }
+        conference.handleHoldRequest(from, jid, false);
+
     }
 
     private boolean acceptMessage(Packet packet)

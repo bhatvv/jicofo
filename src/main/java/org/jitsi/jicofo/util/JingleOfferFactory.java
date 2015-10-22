@@ -18,6 +18,7 @@
 package org.jitsi.jicofo.util;
 
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jingle.*;
+import net.java.sip.communicator.impl.protocol.jabber.extensions.jingle.ContentPacketExtension.SendersEnum;
 
 import org.jitsi.service.neomedia.*;
 
@@ -48,14 +49,15 @@ public class JingleOfferFactory
      *         used in initial conference offer.
      */
     public static ContentPacketExtension createContentForMedia(
-            MediaType mediaType, boolean disableIce, boolean useDtls)
+            MediaType mediaType, boolean disableIce, boolean useDtls, SendersEnum senders)
     {
         ContentPacketExtension content
             = new ContentPacketExtension(
                     ContentPacketExtension.CreatorEnum.initiator,
                     mediaType.name().toLowerCase());
 
-        content.setSenders(ContentPacketExtension.SendersEnum.both);
+        //content.setSenders(ContentPacketExtension.SendersEnum.both);
+        content.setSenders(senders);
 
         // FIXME: re-use Format and EncodingConfiguration
         // to construct the offer

@@ -424,7 +424,7 @@ public class ColibriConferenceImpl
     /**
      * {@inheritDoc}
      */
-    @Override
+    /*@Override
     public boolean muteParticipant(ColibriConferenceIQ channelsInfo,
                                    boolean mute)
     {
@@ -479,8 +479,167 @@ public class ColibriConferenceImpl
         // FIXME wait for response and set local status
 
         return true;
-    }
+    }*/
+    
+    @Override
+    public boolean muteParticipant(ColibriConferenceIQ channelsInfo, boolean mute)
+    {
+        ColibriConferenceIQ request = new ColibriConferenceIQ();
+		request.setID(conferenceState.getID());
 
+	ColibriConferenceIQ.Content audioContent = channelsInfo
+		.getContent("audio");
+	ColibriConferenceIQ.Content videoContent = channelsInfo
+		.getContent("video");
+
+	if (audioContent == null) {
+		logger.error("Failed to mute - no audio content." + " Conf ID: "
+			+ request.getID());
+		return false;
+	}
+	if (videoContent == null) {
+		logger.error("Failed to mute - no video content." + " Conf ID: "
+			+ request.getID());
+		return false;
+	}
+	ColibriConferenceIQ.Content audioContentRequest = new ColibriConferenceIQ.Content(
+			audioContent.getName());
+	ColibriConferenceIQ.Content videoContentRequest = new ColibriConferenceIQ.Content(
+			videoContent.getName());
+
+	for (ColibriConferenceIQ.Channel channel : audioContent.getChannels()) {
+		ColibriConferenceIQ.Channel channelRequest = new ColibriConferenceIQ.Channel();
+
+		channelRequest.setID(channel.getID());
+
+		if (mute) {
+			channelRequest.setDirection(MediaDirection.INACTIVE);
+		} else {
+			channelRequest.setDirection(MediaDirection.SENDRECV);
+		}
+
+		audioContentRequest.addChannel(channelRequest);
+	}
+
+	for (ColibriConferenceIQ.Channel channel : videoContent.getChannels()) {
+		ColibriConferenceIQ.Channel channelRequest = new ColibriConferenceIQ.Channel();
+
+		channelRequest.setID(channel.getID());
+
+		if (mute) {
+			channelRequest.setDirection(MediaDirection.INACTIVE);
+		} else {
+			channelRequest.setDirection(MediaDirection.SENDRECV);
+		}
+
+		videoContentRequest.addChannel(channelRequest);
+	}
+
+	if (audioContentRequest.getChannelCount() == 0) {
+		logger.error("Failed to mute - no audio channels to modify."
+				+ " ConfID:" + request.getID());
+		return false;
+	}
+
+	if (videoContentRequest.getChannelCount() == 0) {
+		logger.error("Failed to mute - no video channels to modify."
+				+ " ConfID:" + request.getID());
+		return false;
+	}
+
+	request.setType(IQ.Type.SET);
+	request.setTo(jitsiVideobridge);
+
+	request.addContent(audioContentRequest);
+	request.addContent(videoContentRequest);
+
+	connection.sendPacket(request);
+
+	// FIXME wait for response and set local status
+
+	return true;
+    }
+    
+    @Override
+    public boolean holdParticipant(ColibriConferenceIQ channelsInfo, boolean hold)
+    
+    {	
+        ColibriConferenceIQ request = new ColibriConferenceIQ();
+        request.setID(conferenceState.getID());
+        
+        ColibriConferenceIQ.Content audioContent = channelsInfo
+        .getContent("audio");
+    
+        ColibriConferenceIQ.Content videoContent = channelsInfo
+         .getContent("video");
+	    
+	    if (audioContent == null) {
+	 
+	        logger.error("Failed to mute - no audio content." + " Conf ID: "
+	            + request.getID());
+	        return false;
+	    }
+	    if (videoContent == null) {
+	        logger.error("Failed to mute - no video content." + " Conf ID: "
+	            + request.getID());
+	        return false;
+	    }
+	    ColibriConferenceIQ.Content audioContentRequest = new ColibriConferenceIQ.Content(
+	            audioContent.getName());
+	    ColibriConferenceIQ.Content videoContentRequest = new ColibriConferenceIQ.Content(
+	            videoContent.getName());
+	    for (ColibriConferenceIQ.Channel channel : audioContent.getChannels()) 
+	    {    	
+	        ColibriConferenceIQ.Channel channelRequest = new ColibriConferenceIQ.Channel();
+	        channelRequest.setID(channel.getID());
+	 
+	        if (hold) {
+	            channelRequest.setDirection(MediaDirection.INACTIVE);
+	        } 
+	        else {
+	            channelRequest.setDirection(MediaDirection.SENDRECV);
+	        }
+	        audioContentRequest.addChannel(channelRequest);
+        
+	    }
+	    for (ColibriConferenceIQ.Channel channel : videoContent.getChannels()) 
+	    {
+	        ColibriConferenceIQ.Channel channelRequest = new ColibriConferenceIQ.Channel();
+	        channelRequest.setID(channel.getID());
+	        
+	        
+	        if (hold) {
+	            channelRequest.setDirection(MediaDirection.INACTIVE);
+	        } 
+	        else {
+	            channelRequest.setDirection(MediaDirection.SENDRECV);
+	        }
+	        videoContentRequest.addChannel(channelRequest);
+	    }
+	 
+	    if (audioContentRequest.getChannelCount() == 0) {
+	 
+	        logger.error("Failed to mute - no audio channels to modify."
+	                + " ConfID:" + request.getID());
+	        return false;
+	    }
+	    if (videoContentRequest.getChannelCount() == 0) {
+	        logger.error("Failed to mute - no video channels to modify."
+	                + " ConfID:" + request.getID());
+	        return false;
+	    }
+	 
+	    request.setType(IQ.Type.SET);
+	    request.setTo(jitsiVideobridge);
+	 
+	    request.addContent(audioContentRequest);
+	    request.addContent(videoContentRequest);
+	 
+	    connection.sendPacket(request);
+	    
+	    return true;
+    }
+    
     /**
      * Sets world readable name that identifies the conference.
      * @param name the new name.

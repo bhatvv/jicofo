@@ -192,4 +192,15 @@ public interface ColibriConference
      *         otherwise.
      */
     boolean muteParticipant(ColibriConferenceIQ channelsInfo, boolean mute);
+    
+    /**
+     * Holds participant in given IQ by changing their media
+     * direction to {@link org.jitsi.service.neomedia.MediaDirection#INACTIVE}.
+     * @param channelsInfo the IQ that describes the channels to be muted.
+     * @param hold <tt>true</tt> to hold or <tt>false</tt> to unhold audio
+     *             channels described in <tt>channelsInfo</tt>.
+     * @return <tt>true</tt> if the operation has succeeded or <tt>false</tt>
+     *         otherwise.
+     */
+    boolean holdParticipant(ColibriConferenceIQ channelsInfo, boolean hold);
 }

@@ -115,6 +115,8 @@ public abstract class AbstractOperationSetJingle
                     address,
                     sid,
                     contents);
+        
+        logger.info(inviteIQ.toXML());
 
         if (useBundle)
         {
@@ -122,13 +124,16 @@ public abstract class AbstractOperationSetJingle
                 = GroupPacketExtension.createBundleGroup(contents);
 
             inviteIQ.addExtension(group);
-
-            for (ContentPacketExtension content : contents)
+            
+            if(contents != null)
             {
-                // FIXME: is it mandatory ?
-                // http://estos.de/ns/bundle
-                content.addChildExtension(
-                    new BundlePacketExtension());
+	            for (ContentPacketExtension content : contents)
+	            {
+	                // FIXME: is it mandatory ?
+	                // http://estos.de/ns/bundle
+	                content.addChildExtension(
+	                    new BundlePacketExtension());
+	            }
             }
         }
 
@@ -144,6 +149,7 @@ public abstract class AbstractOperationSetJingle
         IQ reply = (IQ) getConnection().sendPacketAndGetReply(inviteIQ);
         if (reply != null && IQ.Type.RESULT.equals(reply.getType()))
         {
+        	logger.info("End of session initiate true");
             return true;
         }
         else
@@ -159,6 +165,7 @@ public abstract class AbstractOperationSetJingle
                     "Failed to send session-initiate to " + address
                         + ", error: " + reply.getError());
             }
+            logger.info("End of session initiate false");
             return false;
         }
     }

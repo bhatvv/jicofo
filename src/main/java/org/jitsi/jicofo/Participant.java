@@ -96,6 +96,13 @@ public class Participant
      * Remembers participant's muted status.
      */
     private boolean mutedStatus;
+    
+    
+    /**
+     * Remembers participant's hold status.
+     */
+    private boolean holdStatus;
+    
 
     /**
      *
@@ -401,12 +408,31 @@ public class Participant
     }
 
     /**
+     * Sets hold status of this participant.
+     * @param holdStatus new hold status to set.
+     */
+    public void setHold(boolean holdStatus)
+    {
+        this.holdStatus = holdStatus;
+    }
+    
+    
+    /**
      * Returns <tt>true</tt> if this participant is muted or <tt>false</tt>
      * otherwise.
      */
     public boolean isMuted()
     {
         return mutedStatus;
+    }
+    
+    /**
+     * Returns <tt>true</tt> if this participant is hold or <tt>false</tt>
+     * otherwise.
+     */
+    public boolean isHold()
+    {
+        return holdStatus;
     }
 
     /**

@@ -80,6 +80,11 @@ class OperationSetJingleImpl
      */
     protected XmppConnection getConnection()
     {
+    	if(xmppProvider.getConnectionAdapter()!= null)
+    	{
+    		logger.info(xmppProvider.getConnectionAdapter());
+    	}
+    	
         return xmppProvider.getConnectionAdapter();
     }
 

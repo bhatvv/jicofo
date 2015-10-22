@@ -26,6 +26,7 @@ import net.java.sip.communicator.service.protocol.*;
 import net.java.sip.communicator.service.protocol.event.*;
 import net.java.sip.communicator.util.*;
 import net.java.sip.communicator.util.Logger;
+import net.java.sip.communicator.impl.protocol.jabber.extensions.jingle.ContentPacketExtension;
 
 import org.jitsi.impl.protocol.xmpp.extensions.*;
 import org.jitsi.jicofo.log.*;
@@ -92,6 +93,10 @@ public class JitsiMeetConference
      *        if available.
      */
     private final String id;
+    
+    private Participant owner;
+    
+    private static Map<Participant, Boolean> holdMap ;
 
     /**
      * Name of MUC room that is hosting Jitsi Meet conference.
@@ -525,6 +530,12 @@ public class JitsiMeetConference
             {
                 try
                 {
+                	logger.info("$$$$$$$$$$ Inside RUN");
+                	logger.info("New Participant:" + newParticipant);
+                	logger.info("Address:"+ address);
+                	logger.info("startmuted:"+startMuted);
+                	logger.info("$$$$$$$$");
+                	
                     discoverFeaturesAndInvite(
                             newParticipant, address, startMuted);
                 }
@@ -606,7 +617,11 @@ public class JitsiMeetConference
     private void discoverFeaturesAndInvite(Participant     newParticipant,
                                            String          address,
                                            boolean[]       startMuted)
-    {
+    { 
+    	int flag=0;
+    	
+    	Map<Participant, ChatRoomMember> participantChatMemberMapping = new HashMap<Participant, ChatRoomMember>();
+    	
         // Feature discovery
         List<String> features
             = DiscoveryUtil.discoverParticipantFeatures(
@@ -622,17 +637,109 @@ public class JitsiMeetConference
         
         // Store instance here as it is set to null when conference is disposed
         ColibriConference conference = this.colibriConference;
-        List<ContentPacketExtension> offer;
-
+        List<ContentPacketExtension> offer = null;
+     
+        List<ContentPacketExtension> revisedOffer = null;
+        
+        
+        logger.info("New Participant: "+newParticipant+"\nRole:"+newParticipant.getChatMember().getRole().getRoleName());
+        	
+        String jid = newParticipant.getChatMember().getJabberID();
+        logger.info("\nParticipant jid : " +jid);
+        	
+        
+        	
+        
         try
         {
-            offer = createOffer(newParticipant);
-            if (offer == null)
-            {
-                logger.info("Channel allocation cancelled for " + address);
-                return;
-            }
-        }
+          
+         if(jid.contains("xrtc_sp00f_s1p"))
+          {
+        	  
+        	  offer = createOffer(newParticipant);
+      	    if (offer == null)
+      	    {
+      	           logger.info("Channel allocation cancelled for " + address);
+      	           return;
+      	    }
+        	  
+          }
+        
+          else
+          {
+		       /*if(participants.size()>=3)
+		        {
+		    	   
+		    	   	//logger.info("\nflag:"+flag);
+		    	   	flag =1;
+		    	   	//logger.info("\nflag:"+flag);
+		    	    
+		    	   		    	   
+		        	//logger.info("Participants Size:"+participants.size());	
+		        	
+		        	//logger.info("Endpoint Id of new participant:" +newParticipant.getEndpointId());
+		        	
+		        	participantChatMemberMapping.clear();
+		        	for(Participant p: participants)
+		        	{
+		        		if((!(p.getChatMember().getRole().getRoleName().equalsIgnoreCase("OWNER")))&& (!(p.getEndpointId().equals(newParticipant.getEndpointId()))))
+		        		{	
+		        			
+		        			if(holdMap.get(p) == false)
+		        			{
+		        				
+		        			    logger.info("Endpoint Id of participant which will go on block:" +p.getEndpointId());
+		        			    //revisedOffer = createRevisedHoldOffer(p);
+		        			    //colibriConference.holdParticipant(p.getColibriChannelsInfo(), true);		        			    
+		        			    holdMap.put(p, true);
+		        			    for(ChatRoomMember m :chatRoom.getMembers())
+		        				{	
+		        			    	//logger.info("####" +chatRoom.getMembersCount());
+		        			    	//logger.info("&&&&"+p.getEndpointId());
+		        			    	//logger.info("$$$$"+m.getContactAddress().substring((m.getContactAddress().indexOf('/'))+1));
+		        			    	if(p.getEndpointId().equals(m.getContactAddress().substring((m.getContactAddress().indexOf('/'))+1)))
+		        			    	{	
+		        			    		participantChatMemberMapping.put(p,m);
+		        			    		//logger.info("*****"+participantChatMemberMapping.get(p));
+		        			    	}
+		        			
+		        			    }
+		        			    
+		        			    if (revisedOffer == null)
+				        	    {
+				        	           logger.info("Channel allocation cancelled");
+				        	           return;
+				        	    }
+		        			
+		        			}//map end
+		        		
+		        		}//owner & new participant check
+		       
+		        	}//participant list
+		        	
+		       }//participant_size >= 3
+*/		        	
+		       logger.info("Offer normal");
+		    	   	
+		       offer = createOffer(newParticipant);
+		       /*if(holdMap==null)
+		       {
+		        	holdMap =new HashMap<Participant, Boolean>();
+		        	holdMap.put(newParticipant, false);
+		        		
+		       }
+		       else
+		        	holdMap.put(newParticipant, false);
+		        */		
+			   if (offer == null)
+			   {
+			        logger.info("Channel allocation cancelled for " + address);
+			        return;
+			   }
+		 
+           }//sip/rtc else
+         		
+	    }//try
         catch (OperationFailedException e)
         {
             //FIXME: retry ? sometimes it's just timeout
@@ -655,29 +762,82 @@ public class JitsiMeetConference
            - we have managed to send Jingle session-initiate
            Otherwise we expire allocated channels.
         */
-        if (chatRoom == null ||
-            findMember(address) == null ||
-            !jingle.initiateSession(
-                newParticipant.hasBundleSupport(), address, offer, this,
-                startMuted))
+        
+        
+        
+        
+        /*for(Participant p : participants)
         {
-            if (chatRoom == null)
-            {
-                // Conference disposed
-                logger.info(
-                    "Expiring " + address + " channels - conference disposed");
-            }
-            else
-            {
-                // Participant has left the room
-                logger.info(
-                    "Expiring " + address + " channels - participant has left");
-            }
-            conference.expireChannels(
-                newParticipant.getColibriChannelsInfo());
-        }
-    }
-
+        	logger.info(p.getEndpointId()+", "+holdMap.get(p));
+        }*/
+        
+        
+        
+        
+        
+        //logger.info("\nflag outside list:"+flag);
+        /*if(flag==1)
+        {	
+        	
+        	//logger.info("Size of partcipant chat member mapping :"+participantChatMemberMapping.size());
+        	
+	        for(Participant p:participantChatMemberMapping.keySet())	
+	        {   
+	        	String revisedOfferAddress = participantChatMemberMapping.get(p).getContactAddress();
+	        	boolean[] revisedOfferStartMuted = hasToStartMuted(participantChatMemberMapping.get(p), true);
+	        	
+	        	if (chatRoom == null ||
+		    	            findMember(revisedOfferAddress) == null ||
+		    	            !jingle.initiateSession(
+		    	                p.hasBundleSupport(), revisedOfferAddress, revisedOffer, this,
+		    	                revisedOfferStartMuted))
+		    	        {
+	        		    //logger.info("Inside failed session initiate");
+		    	            if (chatRoom == null)
+		    	            {
+		    	                // Conference disposed
+		    	                logger.info(
+		    	                    "Expiring " + revisedOfferAddress + " channels - conference disposed");
+		    	            }
+		    	            else
+		    	            {
+		    	                // Participant has left the room
+		    	                logger.info("Expiring " + address + " channels - participant has left");
+		    	                
+		    	            }
+		    	            conference.expireChannels(
+		    	                newParticipant.getColibriChannelsInfo());
+		    	        }
+		        	
+		        	//logger.info("Middle participants initiated with revised offer, Newest participant will be");
+	        }
+	      
+        }*/
+        
+        if (chatRoom == null ||
+	           findMember(address) == null ||
+	           !jingle.initiateSession(
+	               newParticipant.hasBundleSupport(), address, offer, this,
+	               startMuted))
+	    {
+	         if (chatRoom == null)
+	         {
+	             // Conference disposed
+	             logger.info(
+	                  "Expiring " + address + " channels - conference disposed");
+	         }
+	         else
+	         {
+	             // Participant has left the room
+	             logger.info(
+	             "Expiring " + address + " channels - participant has left");
+	         }
+	         conference.expireChannels(
+	            newParticipant.getColibriChannelsInfo());
+	    }
+   }
+        
+       
     /**
      * Allocates Colibri channels for given {@link Participant} by trying all
      * available bridges returned by {@link BridgeSelector}.
@@ -835,24 +995,32 @@ public class JitsiMeetConference
     private List<ContentPacketExtension> createOffer(Participant peer)
         throws OperationFailedException
     {
+    	
+    	
+    	
+    	logger.info("********" + "Inside offer" + "###########");
+    	
+    	
         List<ContentPacketExtension> contents
             = new ArrayList<ContentPacketExtension>();
 
         boolean disableIce = !peer.hasIceSupport();
         boolean useDtls = peer.hasDtlsSupport();
-
+        
         if (peer.hasAudioSupport())
         {
             contents.add(
                 JingleOfferFactory.createContentForMedia(
-                    MediaType.AUDIO, disableIce, useDtls));
+                    MediaType.AUDIO, disableIce, useDtls,
+                    ContentPacketExtension.SendersEnum.both));
         }
 
         if (peer.hasVideoSupport())
         {
             contents.add(
                 JingleOfferFactory.createContentForMedia(
-                    MediaType.VIDEO, disableIce, useDtls));
+                    MediaType.VIDEO, disableIce, useDtls,
+                    ContentPacketExtension.SendersEnum.both));
         }
 
         // Is SCTP enabled ?
@@ -863,7 +1031,8 @@ public class JitsiMeetConference
         {
             contents.add(
                 JingleOfferFactory.createContentForMedia(
-                    MediaType.DATA, disableIce, useDtls));
+                    MediaType.DATA, disableIce, useDtls,
+                    ContentPacketExtension.SendersEnum.both));
         }
 
         boolean useBundle = peer.hasBundleSupport();
@@ -1116,6 +1285,633 @@ public class JitsiMeetConference
         return contents;
     }
 
+    
+    
+    
+    
+    
+    
+    private List<ContentPacketExtension> createRevisedHoldOffer(Participant peer)
+            throws OperationFailedException
+        {
+        	
+        	
+        	
+        	logger.info("********" + "Inside RevisedHoldOffer" + "###########");
+        	
+        	
+            List<ContentPacketExtension> contents
+                = new ArrayList<ContentPacketExtension>();
+
+            boolean disableIce = !peer.hasIceSupport();
+            boolean useDtls = peer.hasDtlsSupport();
+
+            if (peer.hasAudioSupport())
+            {
+                contents.add(
+                    JingleOfferFactory.createContentForMedia(
+                        MediaType.AUDIO, disableIce, useDtls,
+                        ContentPacketExtension.SendersEnum.none));
+            }
+
+            if (peer.hasVideoSupport())
+            {
+                contents.add(
+                    JingleOfferFactory.createContentForMedia(
+                        MediaType.VIDEO, disableIce, useDtls,
+                        ContentPacketExtension.SendersEnum.none));
+            }
+
+            // Is SCTP enabled ?
+            boolean openSctp = config == null || config.openSctp() == null
+                    ? true : config.openSctp();
+
+            if (openSctp && peer.hasSctpSupport())
+            {
+                contents.add(
+                    JingleOfferFactory.createContentForMedia(
+                        MediaType.DATA, disableIce, useDtls,
+                        ContentPacketExtension.SendersEnum.none));
+            }
+
+            boolean useBundle = peer.hasBundleSupport();
+
+            ColibriConferenceIQ peerChannels = allocateChannels(peer, contents);
+            
+            
+            logger.info("RevisedOffer : " +peerChannels+ "allocated");
+
+            if (peerChannels == null)
+                return null;
+
+
+            if (earlyRecordingState != null)
+            {
+                RecordingState recState = earlyRecordingState;
+                earlyRecordingState = null;
+
+                Recorder rec = getRecorder();
+                if(rec == null)
+                    logger.error("No recorder found");
+                else
+                {
+                    boolean isTokenCorrect = recorder.setRecording(
+                        recState.from,
+                        recState.token,
+                        recState.state,
+                        recState.path);
+
+                    if (!isTokenCorrect)
+                    {
+                        logger.info(
+                            "Incorrect recording token received ! Session: "
+                                + chatRoom.getName());
+                    }
+
+                    if (recorder.isRecording())
+                    {
+                        ColibriConferenceIQ response = new ColibriConferenceIQ();
+
+                        response.setType(IQ.Type.SET);
+                        response.setTo(recState.from);
+                        response.setFrom(recState.to);
+
+                        response.setRecording(
+                            new ColibriConferenceIQ.Recording(State.ON));
+
+                        protocolProviderHandler.getOperationSet(
+                            OperationSetDirectSmackXmpp.class).getXmppConnection()
+                            .sendPacket(response);
+                    }
+                }
+            }
+
+            peer.setColibriChannelsInfo(peerChannels);
+
+            for (ContentPacketExtension cpe : contents)
+            {
+                ColibriConferenceIQ.Content colibriContent
+                    = peerChannels.getContent(cpe.getName());
+
+                if (colibriContent == null)
+                    continue;
+
+                // Channels
+                for (ColibriConferenceIQ.Channel channel
+                    : colibriContent.getChannels())
+                {
+                    IceUdpTransportPacketExtension transport;
+
+                    if (useBundle)
+                    {
+                        ColibriConferenceIQ.ChannelBundle bundle
+                            = peerChannels.getChannelBundle(
+                                    channel.getChannelBundleId());
+
+                        if (bundle == null)
+                        {
+                            logger.error(
+                                "No bundle for " + channel.getChannelBundleId());
+                            continue;
+                        }
+
+                        transport = bundle.getTransport();
+
+                        if (!transport.isRtcpMux())
+                        {
+                            transport.addChildExtension(
+                                new RtcpmuxPacketExtension());
+                        }
+                    }
+                    else
+                    {
+                        transport = channel.getTransport();
+                    }
+
+                    try
+                    {
+                        // Remove empty transport
+                        IceUdpTransportPacketExtension empty
+                            = cpe.getFirstChildOfType(
+                                    IceUdpTransportPacketExtension.class);
+                        cpe.getChildExtensions().remove(empty);
+
+                        cpe.addChildExtension(
+                            IceUdpTransportPacketExtension
+                                .cloneTransportAndCandidates(transport, true));
+                    }
+                    catch (Exception e)
+                    {
+                        logger.error(e, e);
+                    }
+                }
+                // SCTP connections
+                for (ColibriConferenceIQ.SctpConnection sctpConn
+                    : colibriContent.getSctpConnections())
+                {
+                    IceUdpTransportPacketExtension transport;
+
+                    if (useBundle)
+                    {
+                        ColibriConferenceIQ.ChannelBundle bundle
+                            = peerChannels.getChannelBundle(
+                                    sctpConn.getChannelBundleId());
+
+                        if (bundle == null)
+                        {
+                            logger.error(
+                                "No bundle for " + sctpConn.getChannelBundleId());
+                            continue;
+                        }
+
+                        transport = bundle.getTransport();
+                    }
+                    else
+                    {
+                        transport = sctpConn.getTransport();
+                    }
+
+                    try
+                    {
+                        // Remove empty transport
+                        IceUdpTransportPacketExtension empty
+                            = cpe.getFirstChildOfType(
+                                    IceUdpTransportPacketExtension.class);
+                        cpe.getChildExtensions().remove(empty);
+
+                        IceUdpTransportPacketExtension copy
+                            = IceUdpTransportPacketExtension
+                                .cloneTransportAndCandidates(transport, true);
+
+                        // FIXME: hardcoded
+                        SctpMapExtension sctpMap = new SctpMapExtension();
+                        sctpMap.setPort(5000);
+                        sctpMap.setProtocol(
+                                SctpMapExtension.Protocol.WEBRTC_CHANNEL);
+                        sctpMap.setStreams(1024);
+
+                        copy.addChildExtension(sctpMap);
+
+                        cpe.addChildExtension(copy);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.error(e, e);
+                    }
+                }
+                // Existing peers SSRCs
+                RtpDescriptionPacketExtension rtpDescPe
+                    = JingleUtils.getRtpDescription(cpe);
+                if (rtpDescPe != null)
+                {
+                    if (useBundle)
+                    {
+                        // rtcp-mux
+                        rtpDescPe.addChildExtension(
+                            new RtcpmuxPacketExtension());
+                    }
+
+                    // Copy SSRC sent from the bridge(only the first one)
+                    for (ColibriConferenceIQ.Channel channel
+                        : colibriContent.getChannels())
+                    {
+                        SourcePacketExtension ssrcPe
+                            = channel.getSources().size() > 0
+                                    ? channel.getSources().get(0) : null;
+                        if (ssrcPe == null)
+                            continue;
+
+                        try
+                        {
+                            String contentName = colibriContent.getName();
+                            SourcePacketExtension ssrcCopy = ssrcPe.copy();
+
+                            // FIXME: not all parameters are used currently
+                            ssrcCopy.addParameter(
+                                new ParameterPacketExtension("cname","mixed"));
+                            ssrcCopy.addParameter(
+                                new ParameterPacketExtension(
+                                    "label",
+                                    "mixedlabel" + contentName + "0"));
+                            ssrcCopy.addParameter(
+                                new ParameterPacketExtension(
+                                    "msid",
+                                    "mixedmslabel mixedlabel"
+                                        + contentName + "0"));
+                            ssrcCopy.addParameter(
+                                new ParameterPacketExtension(
+                                    "mslabel", "mixedmslabel"));
+
+                            // Mark 'jvb' as SSRC owner
+                            SSRCInfoPacketExtension ssrcInfo
+                                = new SSRCInfoPacketExtension();
+                            ssrcInfo.setOwner("jvb");
+                            ssrcCopy.addChildExtension(ssrcInfo);
+
+                            rtpDescPe.addChildExtension(ssrcCopy);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.error("Copy SSRC error", e);
+                        }
+                    }
+
+                    // Include all peers SSRCs
+                    List<SourcePacketExtension> mediaSources
+                        = getAllSSRCs(cpe.getName());
+
+                    for (SourcePacketExtension ssrc : mediaSources)
+                    {
+                        try
+                        {
+                            rtpDescPe.addChildExtension(ssrc.copy());
+                        }
+                        catch (Exception e)
+                        {
+                            logger.error("Copy SSRC error", e);
+                        }
+                    }
+
+                    // Include SSRC groups
+                    List<SourceGroupPacketExtension> sourceGroups
+                        = getAllSSRCGroups(cpe.getName());
+                    for(SourceGroupPacketExtension ssrcGroup : sourceGroups)
+                    {
+                        rtpDescPe.addChildExtension(ssrcGroup);
+                    }
+                }
+            }
+
+            return contents;
+        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+   /* private List<ContentPacketExtension> createParticipantOffer(Participant peer)
+            throws OperationFailedException
+        {
+
+    		logger.info("********" + "Inside participant offer" + "###########");
+    	
+            List<ContentPacketExtension> contents
+                = new ArrayList<ContentPacketExtension>();
+
+            boolean disableIce = !peer.hasIceSupport();
+            boolean useDtls = peer.hasDtlsSupport();
+
+            if (peer.hasAudioSupport())
+            {
+                contents.add(
+                    JingleOfferFactory.createContentForMedia(
+                        MediaType.AUDIO, disableIce, useDtls));
+            }
+
+            if (peer.hasVideoSupport())
+            {
+                contents.add(
+                    JingleOfferFactory.createContentForMedia(
+                        MediaType.VIDEO, disableIce, useDtls));
+            }
+
+            // Is SCTP enabled ?
+            boolean openSctp = config == null || config.openSctp() == null
+                    ? true : config.openSctp();
+
+            if (openSctp && peer.hasSctpSupport())
+            {
+                contents.add(
+                    JingleOfferFactory.createContentForMedia(
+                        MediaType.DATA, disableIce, useDtls));
+            }
+
+            boolean useBundle = peer.hasBundleSupport();
+
+            ColibriConferenceIQ peerChannels = allocateChannels(peer, contents);
+
+            if (peerChannels == null)
+                return null;
+
+
+            if (earlyRecordingState != null)
+            {
+                RecordingState recState = earlyRecordingState;
+                earlyRecordingState = null;
+
+                Recorder rec = getRecorder();
+                if(rec == null)
+                    logger.error("No recorder found");
+                else
+                {
+                    boolean isTokenCorrect = recorder.setRecording(
+                        recState.from,
+                        recState.token,
+                        recState.state,
+                        recState.path);
+
+                    if (!isTokenCorrect)
+                    {
+                        logger.info(
+                            "Incorrect recording token received ! Session: "
+                                + chatRoom.getName());
+                    }
+
+                    if (recorder.isRecording())
+                    {
+                        ColibriConferenceIQ response = new ColibriConferenceIQ();
+
+                        response.setType(IQ.Type.SET);
+                        response.setTo(recState.from);
+                        response.setFrom(recState.to);
+
+                        response.setRecording(
+                            new ColibriConferenceIQ.Recording(State.ON));
+
+                        protocolProviderHandler.getOperationSet(
+                            OperationSetDirectSmackXmpp.class).getXmppConnection()
+                            .sendPacket(response);
+                    }
+                }
+            }
+
+            peer.setColibriChannelsInfo(peerChannels);
+
+            for (ContentPacketExtension cpe : contents)
+            {
+                ColibriConferenceIQ.Content colibriContent
+                    = peerChannels.getContent(cpe.getName());
+
+                if (colibriContent == null)
+                    continue;
+
+                // Channels
+                for (ColibriConferenceIQ.Channel channel
+                    : colibriContent.getChannels())
+                {
+                    IceUdpTransportPacketExtension transport;
+
+                    if (useBundle)
+                    {
+                        ColibriConferenceIQ.ChannelBundle bundle
+                            = peerChannels.getChannelBundle(
+                                    channel.getChannelBundleId());
+
+                        if (bundle == null)
+                        {
+                            logger.error(
+                                "No bundle for " + channel.getChannelBundleId());
+                            continue;
+                        }
+
+                        transport = bundle.getTransport();
+
+                        if (!transport.isRtcpMux())
+                        {
+                            transport.addChildExtension(
+                                new RtcpmuxPacketExtension());
+                        }
+                    }
+                    else
+                    {
+                        transport = channel.getTransport();
+                    }
+
+                    try
+                    {
+                        // Remove empty transport
+                        IceUdpTransportPacketExtension empty
+                            = cpe.getFirstChildOfType(
+                                    IceUdpTransportPacketExtension.class);
+                        cpe.getChildExtensions().remove(empty);
+
+                        cpe.addChildExtension(
+                            IceUdpTransportPacketExtension
+                                .cloneTransportAndCandidates(transport, true));
+                    }
+                    catch (Exception e)
+                    {
+                        logger.error(e, e);
+                    }
+                }
+                // SCTP connections
+                for (ColibriConferenceIQ.SctpConnection sctpConn
+                    : colibriContent.getSctpConnections())
+                {
+                    IceUdpTransportPacketExtension transport;
+
+                    if (useBundle)
+                    {
+                        ColibriConferenceIQ.ChannelBundle bundle
+                            = peerChannels.getChannelBundle(
+                                    sctpConn.getChannelBundleId());
+
+                        if (bundle == null)
+                        {
+                            logger.error(
+                                "No bundle for " + sctpConn.getChannelBundleId());
+                            continue;
+                        }
+
+                        transport = bundle.getTransport();
+                    }
+                    else
+                    {
+                        transport = sctpConn.getTransport();
+                    }
+
+                    try
+                    {
+                        // Remove empty transport
+                        IceUdpTransportPacketExtension empty
+                            = cpe.getFirstChildOfType(
+                                    IceUdpTransportPacketExtension.class);
+                        cpe.getChildExtensions().remove(empty);
+
+                        IceUdpTransportPacketExtension copy
+                            = IceUdpTransportPacketExtension
+                                .cloneTransportAndCandidates(transport, true);
+
+                        // FIXME: hardcoded
+                        SctpMapExtension sctpMap = new SctpMapExtension();
+                        sctpMap.setPort(5000);
+                        sctpMap.setProtocol(
+                                SctpMapExtension.Protocol.WEBRTC_CHANNEL);
+                        sctpMap.setStreams(1024);
+
+                        copy.addChildExtension(sctpMap);
+
+                        cpe.addChildExtension(copy);
+                    }
+                    catch (Exception e)
+                    {
+                        logger.error(e, e);
+                    }
+                }
+                // Existing peers SSRCs
+                RtpDescriptionPacketExtension rtpDescPe
+                    = JingleUtils.getRtpDescription(cpe);
+                if (rtpDescPe != null)
+                {
+                    if (useBundle)
+                    {
+                        // rtcp-mux
+                        rtpDescPe.addChildExtension(
+                            new RtcpmuxPacketExtension());
+                    }
+
+                    // Copy SSRC sent from the bridge(only the first one)
+                    for (ColibriConferenceIQ.Channel channel
+                        : colibriContent.getChannels())
+                    {
+                        SourcePacketExtension ssrcPe
+                            = channel.getSources().size() > 0
+                                    ? channel.getSources().get(0) : null;
+                        if (ssrcPe == null)
+                            continue;
+
+                        try
+                        {
+                            String contentName = colibriContent.getName();
+                            SourcePacketExtension ssrcCopy = ssrcPe.copy();
+
+                            // FIXME: not all parameters are used currently
+                            ssrcCopy.addParameter(
+                                new ParameterPacketExtension("cname","mixed"));
+                            ssrcCopy.addParameter(
+                                new ParameterPacketExtension(
+                                    "label",
+                                    "mixedlabel" + contentName + "0"));
+                            ssrcCopy.addParameter(
+                                new ParameterPacketExtension(
+                                    "msid",
+                                    "mixedmslabel mixedlabel"
+                                        + contentName + "0"));
+                            ssrcCopy.addParameter(
+                                new ParameterPacketExtension(
+                                    "mslabel", "mixedmslabel"));
+
+                            // Mark 'jvb' as SSRC owner
+                            SSRCInfoPacketExtension ssrcInfo
+                                = new SSRCInfoPacketExtension();
+                            ssrcInfo.setOwner("jvb");
+                            ssrcCopy.addChildExtension(ssrcInfo);
+
+                            rtpDescPe.addChildExtension(ssrcCopy);
+                        }
+                        catch (Exception e)
+                        {
+                            logger.error("Copy SSRC error", e);
+                        }
+                    }
+
+                    // Include all peers SSRCs
+                    List<SourcePacketExtension> mediaSources
+                        = getAllSSRCs(cpe.getName());
+
+                    for (SourcePacketExtension ssrc : mediaSources)
+                    {
+                        try
+                        {
+                            rtpDescPe.addChildExtension(ssrc.copy());
+                        }
+                        catch (Exception e)
+                        {
+                            logger.error("Copy SSRC error", e);
+                        }
+                    }
+
+                    // Include SSRC groups
+                    List<SourceGroupPacketExtension> sourceGroups
+                        = getAllSSRCGroups(cpe.getName());
+                    for(SourceGroupPacketExtension ssrcGroup : sourceGroups)
+                    {
+                        rtpDescPe.addChildExtension(ssrcGroup);
+                    }
+                }
+            }
+
+            return contents;
+        }*/
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     /**
      * Counts the number of non-focus chat room members and returns
      * <tt>true</tt> if there are at least two of them.
@@ -1967,7 +2763,52 @@ public class JitsiMeetConference
 
         return succeeded;
     }
-
+    
+    boolean handleHoldRequest(String fromJid,
+            String toBeHoldJid,
+            boolean doHold)
+	{
+		Participant principal = findParticipantForRoomJid(fromJid);
+		if (principal == null)
+		{
+		logger.error(
+		"Failed to perform hold operation - " + fromJid
+		  +" not exists in the conference.");
+		return false;
+		}
+		// Only moderators can mute others
+		if (!fromJid.equals(toBeHoldJid)
+		&& ChatRoomMemberRole.MODERATOR.compareTo(
+		principal.getChatMember().getRole()) < 0)
+		{
+		logger.error(
+		"Permission denied for hold operation from " + fromJid);
+		return false;
+		}
+		
+		Participant participant = findParticipantForRoomJid(toBeHoldJid);
+		if (participant == null)
+		{
+		logger.error("Participant for jid: " + toBeHoldJid + " not found");
+		return false;
+		}
+		
+		logger.info(
+		"Will " + (doHold ? "hold" : "unhold")
+		+ " " + toBeHoldJid + " on behalf of " + fromJid);
+		
+		boolean succeeded
+		= colibriConference.holdParticipant(
+		  participant.getColibriChannelsInfo(), doHold);
+		
+		if (succeeded)
+		{
+		participant.setHold(doHold);
+		}
+		
+		return succeeded;
+	}
+    
     /**
      * Returns the instance of {@link ColibriConference} used in this jitsi
      * Meet session.

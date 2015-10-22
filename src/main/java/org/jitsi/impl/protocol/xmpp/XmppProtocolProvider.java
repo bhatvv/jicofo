@@ -21,6 +21,7 @@ import net.java.sip.communicator.impl.protocol.jabber.*;
 import net.java.sip.communicator.service.protocol.*;
 import net.java.sip.communicator.service.protocol.event.*;
 import net.java.sip.communicator.service.protocol.jabber.*;
+import net.java.sip.communicator.util.Logger;
 
 import org.jitsi.impl.protocol.xmpp.colibri.*;
 import org.jitsi.protocol.xmpp.*;
@@ -553,10 +554,15 @@ public class XmppProtocolProvider
 
             connection.sendPacket(packet);
 
-            //FIXME: retry allocation on timeout
+            
             Packet response = packetCollector.nextResult(20000);
 
             packetCollector.cancel();
+            
+            if(response != null)
+            {
+            	logger.info("Response got from send PacketAndGetReply()");
+            }
 
             return response;
         }
