@@ -32,7 +32,6 @@
 	<classpathentry kind="lib" path="lib/libidn.jar"/>
 	<classpathentry kind="lib" path="lib/libjitsi-1.0-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/libjitsi-protocol-1.0-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="lib/logging.properties"/>
 	<classpathentry kind="lib" path="lib/netaddr.jar"/>
 	<classpathentry kind="lib" path="lib/osgi.core.jar"/>
 	<classpathentry kind="lib" path="lib/protocol-jabber.jar"/>
