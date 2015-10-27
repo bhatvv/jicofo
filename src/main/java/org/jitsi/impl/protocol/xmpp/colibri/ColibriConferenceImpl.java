@@ -54,6 +54,7 @@ public class ColibriConferenceImpl
     private final XmppConnection connection;
     /**
      * XMPP address of videobridge component.
+     * 
      */
     private String jitsiVideobridge;
 
@@ -513,7 +514,7 @@ public class ColibriConferenceImpl
 		channelRequest.setID(channel.getID());
 
 		if (mute) {
-			channelRequest.setDirection(MediaDirection.INACTIVE);
+			channelRequest.setDirection(MediaDirection.SENDONLY);
 		} else {
 			channelRequest.setDirection(MediaDirection.SENDRECV);
 		}
@@ -527,7 +528,7 @@ public class ColibriConferenceImpl
 		channelRequest.setID(channel.getID());
 
 		if (mute) {
-			channelRequest.setDirection(MediaDirection.INACTIVE);
+			channelRequest.setDirection(MediaDirection.SENDONLY);
 		} else {
 			channelRequest.setDirection(MediaDirection.SENDRECV);
 		}
