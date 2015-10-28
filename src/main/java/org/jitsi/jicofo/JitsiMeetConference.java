@@ -94,10 +94,6 @@ public class JitsiMeetConference
      */
     private final String id;
     
-    private Participant owner;
-    
-    private static Map<Participant, Boolean> holdMap ;
-
     /**
      * Name of MUC room that is hosting Jitsi Meet conference.
      */
@@ -530,11 +526,10 @@ public class JitsiMeetConference
             {
                 try
                 {
-                	logger.info("$$$$$$$$$$ Inside RUN");
+                
                 	logger.info("New Participant:" + newParticipant);
                 	logger.info("Address:"+ address);
                 	logger.info("startmuted:"+startMuted);
-                	logger.info("$$$$$$$$");
                 	
                     discoverFeaturesAndInvite(
                             newParticipant, address, startMuted);
@@ -618,9 +613,6 @@ public class JitsiMeetConference
                                            String          address,
                                            boolean[]       startMuted)
     { 
-    	int flag=0;
-    	
-    	Map<Participant, ChatRoomMember> participantChatMemberMapping = new HashMap<Participant, ChatRoomMember>();
     	
         // Feature discovery
         List<String> features
@@ -638,108 +630,17 @@ public class JitsiMeetConference
         // Store instance here as it is set to null when conference is disposed
         ColibriConference conference = this.colibriConference;
         List<ContentPacketExtension> offer = null;
-     
-        List<ContentPacketExtension> revisedOffer = null;
-        
-        
-        logger.info("New Participant: "+newParticipant+"\nRole:"+newParticipant.getChatMember().getRole().getRoleName());
-        	
-        String jid = newParticipant.getChatMember().getJabberID();
-        logger.info("\nParticipant jid : " +jid);
-        	
-        
-        	
-        
+     	
         try
         {
-          
-         if(jid.contains("xrtc_sp00f_s1p"))
-          {
-        	  
-        	  offer = createOffer(newParticipant);
-      	    if (offer == null)
-      	    {
-      	           logger.info("Channel allocation cancelled for " + address);
-      	           return;
-      	    }
-        	  
-          }
-        
-          else
-          {
-		       /*if(participants.size()>=3)
-		        {
-		    	   
-		    	   	//logger.info("\nflag:"+flag);
-		    	   	flag =1;
-		    	   	//logger.info("\nflag:"+flag);
-		    	    
-		    	   		    	   
-		        	//logger.info("Participants Size:"+participants.size());	
-		        	
-		        	//logger.info("Endpoint Id of new participant:" +newParticipant.getEndpointId());
-		        	
-		        	participantChatMemberMapping.clear();
-		        	for(Participant p: participants)
-		        	{
-		        		if((!(p.getChatMember().getRole().getRoleName().equalsIgnoreCase("OWNER")))&& (!(p.getEndpointId().equals(newParticipant.getEndpointId()))))
-		        		{	
-		        			
-		        			if(holdMap.get(p) == false)
-		        			{
-		        				
-		        			    logger.info("Endpoint Id of participant which will go on block:" +p.getEndpointId());
-		        			    //revisedOffer = createRevisedHoldOffer(p);
-		        			    //colibriConference.holdParticipant(p.getColibriChannelsInfo(), true);		        			    
-		        			    holdMap.put(p, true);
-		        			    for(ChatRoomMember m :chatRoom.getMembers())
-		        				{	
-		        			    	//logger.info("####" +chatRoom.getMembersCount());
-		        			    	//logger.info("&&&&"+p.getEndpointId());
-		        			    	//logger.info("$$$$"+m.getContactAddress().substring((m.getContactAddress().indexOf('/'))+1));
-		        			    	if(p.getEndpointId().equals(m.getContactAddress().substring((m.getContactAddress().indexOf('/'))+1)))
-		        			    	{	
-		        			    		participantChatMemberMapping.put(p,m);
-		        			    		//logger.info("*****"+participantChatMemberMapping.get(p));
-		        			    	}
-		        			
-		        			    }
-		        			    
-		        			    if (revisedOffer == null)
-				        	    {
-				        	           logger.info("Channel allocation cancelled");
-				        	           return;
-				        	    }
-		        			
-		        			}//map end
-		        		
-		        		}//owner & new participant check
-		       
-		        	}//participant list
-		        	
-		       }//participant_size >= 3
-*/		        	
-		       logger.info("Offer normal");
-		    	   	
-		       offer = createOffer(newParticipant);
-		       /*if(holdMap==null)
-		       {
-		        	holdMap =new HashMap<Participant, Boolean>();
-		        	holdMap.put(newParticipant, false);
-		        		
-		       }
-		       else
-		        	holdMap.put(newParticipant, false);
-		        */		
-			   if (offer == null)
-			   {
-			        logger.info("Channel allocation cancelled for " + address);
-			        return;
-			   }
-		 
-           }//sip/rtc else
-         		
-	    }//try
+			offer = createOffer(newParticipant);
+			      
+		    if (offer == null)
+		    {
+				 logger.info("Channel allocation cancelled for " + address);
+				 return;
+		    }
+        }
         catch (OperationFailedException e)
         {
             //FIXME: retry ? sometimes it's just timeout
@@ -754,65 +655,7 @@ public class JitsiMeetConference
             // Cancel - no channels allocated
             return;
         }
-        /*
-           This check makes sure that at the point when we're trying to
-           invite new participant:
-           - the conference has not been disposed in the meantime
-           - he's still in the room
-           - we have managed to send Jingle session-initiate
-           Otherwise we expire allocated channels.
-        */
         
-        
-        
-        
-        /*for(Participant p : participants)
-        {
-        	logger.info(p.getEndpointId()+", "+holdMap.get(p));
-        }*/
-        
-        
-        
-        
-        
-        //logger.info("\nflag outside list:"+flag);
-        /*if(flag==1)
-        {	
-        	
-        	//logger.info("Size of partcipant chat member mapping :"+participantChatMemberMapping.size());
-        	
-	        for(Participant p:participantChatMemberMapping.keySet())	
-	        {   
-	        	String revisedOfferAddress = participantChatMemberMapping.get(p).getContactAddress();
-	        	boolean[] revisedOfferStartMuted = hasToStartMuted(participantChatMemberMapping.get(p), true);
-	        	
-	        	if (chatRoom == null ||
-		    	            findMember(revisedOfferAddress) == null ||
-		    	            !jingle.initiateSession(
-		    	                p.hasBundleSupport(), revisedOfferAddress, revisedOffer, this,
-		    	                revisedOfferStartMuted))
-		    	        {
-	        		    //logger.info("Inside failed session initiate");
-		    	            if (chatRoom == null)
-		    	            {
-		    	                // Conference disposed
-		    	                logger.info(
-		    	                    "Expiring " + revisedOfferAddress + " channels - conference disposed");
-		    	            }
-		    	            else
-		    	            {
-		    	                // Participant has left the room
-		    	                logger.info("Expiring " + address + " channels - participant has left");
-		    	                
-		    	            }
-		    	            conference.expireChannels(
-		    	                newParticipant.getColibriChannelsInfo());
-		    	        }
-		        	
-		        	//logger.info("Middle participants initiated with revised offer, Newest participant will be");
-	        }
-	      
-        }*/
         
         if (chatRoom == null ||
 	           findMember(address) == null ||
@@ -995,12 +838,6 @@ public class JitsiMeetConference
     private List<ContentPacketExtension> createOffer(Participant peer)
         throws OperationFailedException
     {
-    	
-    	
-    	
-    	logger.info("********" + "Inside offer" + "###########");
-    	
-    	
         List<ContentPacketExtension> contents
             = new ArrayList<ContentPacketExtension>();
 

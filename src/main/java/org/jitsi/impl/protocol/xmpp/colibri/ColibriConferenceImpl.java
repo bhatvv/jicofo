@@ -54,6 +54,7 @@ public class ColibriConferenceImpl
     private final XmppConnection connection;
     /**
      * XMPP address of videobridge component.
+     * 
      */
     private String jitsiVideobridge;
 
