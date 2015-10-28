@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/main/java"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/agafua-syslog.jar"/>
 	<classpathentry kind="lib" path="lib/bccontrib.jar"/>
 	<classpathentry kind="lib" path="lib/bcpkix-jdk15on-151.jar"/>
@@ -32,7 +31,6 @@
 	<classpathentry kind="lib" path="lib/libidn.jar"/>
 	<classpathentry kind="lib" path="lib/libjitsi-1.0-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="lib/libjitsi-protocol-1.0-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="lib/logging.properties"/>
 	<classpathentry kind="lib" path="lib/netaddr.jar"/>
 	<classpathentry kind="lib" path="lib/osgi.core.jar"/>
 	<classpathentry kind="lib" path="lib/protocol-jabber.jar"/>
@@ -52,5 +50,6 @@
 	<classpathentry kind="lib" path="lib/whack.jar"/>
 	<classpathentry kind="lib" path="lib/xpp3.jar"/>
 	<classpathentry kind="lib" path="lib/zrtp4j.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

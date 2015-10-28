@@ -1,5 +1,7 @@
 package org.jitsi.impl.protocol.xmpp.extensions;
 
+import org.jitsi.util.*;
+
 import net.java.sip.communicator.util.Logger;
 
 /**
@@ -22,6 +24,9 @@ public class PrivateIQ extends AbstractIQ {
 
 	/** XML element name of media. */
 	public static final String INFO_ELEMENT_NAME = "info";
+	
+	/** XML element name of data. */
+	public static final String DATA_ELEMENT_NAME = "data";
 
 	/** Attribute name jid. */
 	public static final String JID_ATTR_NAME = "jid";
@@ -37,7 +42,16 @@ public class PrivateIQ extends AbstractIQ {
 
 	/** Attribute name media. */
 	public static final String MEDIA_ATTR_NAME = "media";
-
+	
+	/** Attribute name destJid. */
+	public static final String DESTJID_ATTR_NAME = "destJid";
+	
+	/** Attribute name holdUser. */
+	public static final String HOLDUSER_ATTR_NAME = "holdUser";
+	
+	/** Attribute name value of data. */
+	public static final String VALUE_ATTR_NAME = "value";
+	
 	/** The jid. */
 	private String jid;
 
@@ -61,7 +75,22 @@ public class PrivateIQ extends AbstractIQ {
 
 	/** The connected. */
 	private boolean connected;
-
+	
+	/** Indicates if the participant is sip. */
+	private boolean sipCall;
+	
+	/**  Destination jid sent to client for sip calls. */
+	private String destJid;
+	
+	/**  Jid of the user thats going on hold. */
+	private String holdUser;
+	
+	/**  Statistics data value parameter. */
+	private String value;
+	
+	/**  Indicates if the participant is on hold. */
+	private Boolean isOnHold;
+	
 	/**
 	 * The Enum mediaValues.
 	 */
@@ -109,12 +138,17 @@ public class PrivateIQ extends AbstractIQ {
 		}
 
 		StringBuilder output = new StringBuilder();
-		output.append("<query xmlns='jabber:iq:private'").append(">")
-				.append("<media xmlns='media:prefs'").append(">")
-				.append("<info jabberid='").append(getJabberid())
-				.append("' media='").append(getMedia()).append("' action='")
-				.append(getAction()).append("' />").append("</media>")
-				.append("</query>");
+		output.append("<" + QUERY_ELEMENT_NAME + " xmlns='jabber:iq:private'").append(">")
+		    .append("<" + MEDIA_ELEMENT_NAME + " xmlns='media:prefs'").append(">")
+		    .append("<" + INFO_ELEMENT_NAME + " " + ROUTING_ATTR_NAME + "='").append(getJabberid())
+		    .append("' " + MEDIA_ATTR_NAME + "='").append(getMedia())
+		    .append("' " + ACTION_ATTR_NAME + "='").append(getAction())
+		    .append(isSipCall() ? "' " + DESTJID_ATTR_NAME + "='" + getDestjid() : "")
+		    .append(isOnHold() != null ? "' " + HOLDUSER_ATTR_NAME + "='" + getHoldUser() : "")
+		    .append("' />").append("</media>")
+		    .append(StringUtils.isNullOrEmpty(value) ? 
+		    		"" : "<" + DATA_ELEMENT_NAME + " " + VALUE_ATTR_NAME + "='" + getValue() + "' />")
+		    .append("</" + QUERY_ELEMENT_NAME + ">");
 
 		logger.info("PrivateIQ Child XML: " + output.toString());
 
@@ -283,6 +317,92 @@ public class PrivateIQ extends AbstractIQ {
 	 */
 	public void setConnected(boolean connected) {
 		this.connected = connected;
+	}
+	
+	/**
+	 * Checks if is sip call.
+	 *
+	 * @return true, if is sip call
+	 */
+	public boolean isSipCall() {
+		return sipCall;
+	}
+
+	/**
+	 * Sets the sip call.
+	 *
+	 * @param sipCall the new sip call
+	 */
+	public void setSipCall(boolean sipCall) {
+		this.sipCall = sipCall;
+	}
+
+	/**
+	 * Gets the destjid.
+	 *
+	 * @return the destjid
+	 */
+	public String getDestjid() {
+		return destJid;
+	}
+
+	/**
+	 * Sets the destjid.
+	 *
+	 * @param destjid the new destjid
+	 */
+	public void setDestjid(String destjid) {
+		this.destJid = destjid;
+	}
+
+	/**
+	 * @return the holdUser
+	 */
+	public String getHoldUser() {
+		return holdUser;
+	}
+
+	/**
+	 * @param holdUser the holdUser to set
+	 */
+	public void setHoldUser(String holdUser) {
+		this.holdUser = holdUser;
+	}
+
+	/**
+	 * Gets the value.
+	 *
+	 * @return the value
+	 */
+	public String getValue() {
+		return value;
+	}
+
+	/**
+	 * Sets the value.
+	 *
+	 * @param value the new value
+	 */
+	public void setValue(String value) {
+		this.value = value;
+	}
+
+	/**
+	 * Checks if is on hold.
+	 *
+	 * @return the boolean
+	 */
+	public Boolean isOnHold() {
+		return isOnHold;
+	}
+
+	/**
+	 * Sets the on hold.
+	 *
+	 * @param isOnHold the new on hold
+	 */
+	public void setOnHold(Boolean isOnHold) {
+		this.isOnHold = isOnHold;
 	}
 
 }

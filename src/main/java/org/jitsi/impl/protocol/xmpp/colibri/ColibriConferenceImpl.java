@@ -513,7 +513,7 @@ public class ColibriConferenceImpl
 		channelRequest.setID(channel.getID());
 
 		if (mute) {
-			channelRequest.setDirection(MediaDirection.INACTIVE);
+			channelRequest.setDirection(MediaDirection.SENDONLY);
 		} else {
 			channelRequest.setDirection(MediaDirection.SENDRECV);
 		}
@@ -527,7 +527,7 @@ public class ColibriConferenceImpl
 		channelRequest.setID(channel.getID());
 
 		if (mute) {
-			channelRequest.setDirection(MediaDirection.INACTIVE);
+			channelRequest.setDirection(MediaDirection.SENDONLY);
 		} else {
 			channelRequest.setDirection(MediaDirection.SENDRECV);
 		}
