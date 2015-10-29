@@ -161,87 +161,87 @@ public class PrivateIQ extends AbstractIQ {
 		    .append("</" + QUERY_ELEMENT_NAME + ">");
 
 		return output.toString();
-	}
+        }
 	
-	/**
-	 * Convert org.xmpp.packet.IQ to PrivateIQ.
-	 *
-	 * @param iq the org.xmpp.packet.IQ
-	 * @return the private iq
-	 */
-	public static PrivateIQ convert(IQ iq)
-	{
-		PrivateIQ privateIQ = new PrivateIQ();
-		String iqXml = iq.toXML();
-		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder dBuilder;
-		try {
-			dBuilder = dbFactory.newDocumentBuilder();
+    /**
+     * Convert org.xmpp.packet.IQ to PrivateIQ.
+     *
+     * @param iq the org.xmpp.packet.IQ
+     * @return the private iq
+     */
+    public static PrivateIQ convert(IQ iq)
+    {
+        PrivateIQ privateIQ = new PrivateIQ();
+	String iqXml = iq.toXML();
+	DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+	DocumentBuilder dBuilder;
+	try {
+            dBuilder = dbFactory.newDocumentBuilder();
 
-			InputSource is = new InputSource();
-			is.setCharacterStream(new StringReader(iqXml));
-			Document doc = dBuilder.parse(is);
-			doc.getDocumentElement().normalize();
+	    InputSource is = new InputSource();
+	    is.setCharacterStream(new StringReader(iqXml));
+	    Document doc = dBuilder.parse(is);
+	    doc.getDocumentElement().normalize();
 
-			Node iqNode = doc.getElementsByTagName("iq").item(0);
-			Element iqElement = (Element) iqNode;
-			privateIQ.setTo(iqElement.getAttribute("to"));
-			privateIQ.setFrom(iqElement.getAttribute("from"));
-			privateIQ.setType(iqElement.getAttribute("type").equalsIgnoreCase("set")
-					? org.jivesoftware.smack.packet.IQ.Type.SET : org.jivesoftware.smack.packet.IQ.Type.GET);
+	    Node iqNode = doc.getElementsByTagName("iq").item(0);
+	    Element iqElement = (Element) iqNode;
+            privateIQ.setPacketID(iqElement.getAttribute("id"));
+	    privateIQ.setTo(iqElement.getAttribute("to"));
+	    privateIQ.setFrom(iqElement.getAttribute("from"));
+	    privateIQ.setType(iqElement.getAttribute("type").equalsIgnoreCase("set")
+	        ? org.jivesoftware.smack.packet.IQ.Type.SET : org.jivesoftware.smack.packet.IQ.Type.GET);
 
-			Node queryNode = iqElement.getElementsByTagName(QUERY_ELEMENT_NAME).item(0);
-			Element queryElement = (Element) queryNode;
-			Node mediaNode = queryElement.getElementsByTagName(MEDIA_ELEMENT_NAME).item(0);
-			Element mediaElement = (Element) mediaNode;
+	    Node queryNode = iqElement.getElementsByTagName(QUERY_ELEMENT_NAME).item(0);
+	    Element queryElement = (Element) queryNode;
+	    Node mediaNode = queryElement.getElementsByTagName(MEDIA_ELEMENT_NAME).item(0);
+	    Element mediaElement = (Element) mediaNode;
 
-			Node infoNode = mediaElement.getElementsByTagName(INFO_ELEMENT_NAME).item(0);
-			Element infoElement = (Element) infoNode;
-			privateIQ.setJabberid(infoElement.getAttribute(ROUTING_ATTR_NAME));
+	    Node infoNode = mediaElement.getElementsByTagName(INFO_ELEMENT_NAME).item(0);
+	    Element infoElement = (Element) infoNode;
+	    privateIQ.setJabberid(infoElement.getAttribute(ROUTING_ATTR_NAME));
+            String media = infoElement.getAttribute(MEDIA_ATTR_NAME);
+	    if (media.equals(mediaValues.AudioVideo.toString()))
+	    {
+	        privateIQ.setAudioSupport(true);
+		privateIQ.setVideoSupport(true);
+	    }
+	    else if (media.equals(mediaValues.Audio.toString()))
+	    {
+		privateIQ.setAudioSupport(true);
+		privateIQ.setVideoSupport(false);
+	    }
+	    else if (media.equals(mediaValues.Video.toString()))
+	    {
+		privateIQ.setAudioSupport(false);
+		privateIQ.setVideoSupport(true);
+	    }
+	    else
+	    {
+		privateIQ.setAudioSupport(false);
+		privateIQ.setVideoSupport(false);
+	    }
 
-			String media = infoElement.getAttribute(MEDIA_ATTR_NAME);
-			if (media.equals(mediaValues.AudioVideo.toString()))
-			{
-				privateIQ.setAudioSupport(true);
-				privateIQ.setVideoSupport(true);
-			}
-			else if (media.equals(mediaValues.Audio.toString()))
-			{
-				privateIQ.setAudioSupport(true);
-				privateIQ.setVideoSupport(false);
-			}
-			else if (media.equals(mediaValues.Video.toString()))
-			{
-				privateIQ.setAudioSupport(false);
-				privateIQ.setVideoSupport(true);
-			}
-			else
-			{
-				privateIQ.setAudioSupport(false);
-				privateIQ.setVideoSupport(false);
-			}
+	    privateIQ.setConnected(infoElement.getAttribute(ACTION_ATTR_NAME)
+		.equals("connected") ? true : false);
 
-			privateIQ.setConnected(infoElement.getAttribute(ACTION_ATTR_NAME)
-				.equals("connected") ? true : false);
-
-			Node dataNode = mediaElement.getElementsByTagName(DATA_ELEMENT_NAME).item(0);
-			privateIQ.setValue(dataNode.getTextContent());
-		}
-		catch (ParserConfigurationException e)
-		{
-			logger.error("Error parsing private iq xml : ", e);
-		}
-		catch (SAXException e)
-		{
-			logger.error("Error parsing xml : ", e);
-		}
-		catch (IOException e)
-		{
-			logger.error("Error reading string input : ", e);
-		}
-		
-		return privateIQ;
+	    Node dataNode = mediaElement.getElementsByTagName(DATA_ELEMENT_NAME).item(0);
+	    privateIQ.setValue(dataNode.getTextContent());
 	}
+	catch (ParserConfigurationException e)
+	{
+	    logger.error("Error parsing private iq xml : ", e);
+	}
+	catch (SAXException e)
+	{
+	    logger.error("Error parsing xml : ", e);
+	}
+	catch (IOException e)
+	{
+	    logger.error("Error reading string input : ", e);
+	}
+		
+	return privateIQ;
+    }
 	
 	/*
 	 * (non-Javadoc)
