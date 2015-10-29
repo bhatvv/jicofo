@@ -1,6 +1,19 @@
 package org.jitsi.impl.protocol.xmpp.extensions;
 
+import java.io.IOException;
+import java.io.StringReader;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.jitsi.util.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xmpp.packet.IQ;
 
 import net.java.sip.communicator.util.Logger;
 
@@ -135,23 +148,101 @@ public class PrivateIQ extends AbstractIQ {
 		}
 
 		StringBuilder output = new StringBuilder();
-		output.append("<" + QUERY_ELEMENT_NAME + " xmlns='jabber:iq:private'").append(">")
-		    .append("<" + MEDIA_ELEMENT_NAME + " xmlns='media:prefs'").append(">")
-		    .append("<" + INFO_ELEMENT_NAME + " " + ROUTING_ATTR_NAME + "='").append(getJabberid())
-		    .append("' " + MEDIA_ATTR_NAME + "='").append(getMedia())
-		    .append("' " + ACTION_ATTR_NAME + "='").append(getAction())
-		    .append(isSipCall() ? "' " + DESTJID_ATTR_NAME + "='" + getDestjid() : "")
-		    .append(isOnHold() != null ? "' " + HOLDUSER_ATTR_NAME + "='" + getHoldUser() : "")
+		output.append("<" + QUERY_ELEMENT_NAME + " xmlns=\"jabber:iq:private\"").append(">")
+		    .append("<" + MEDIA_ELEMENT_NAME + " xmlns=\"media:prefs\"").append(">")
+		    .append("<" + INFO_ELEMENT_NAME + " " + ROUTING_ATTR_NAME + "=\"").append(getJabberid())
+		    .append("\" " + MEDIA_ATTR_NAME + "=\"").append(getMedia())
+		    .append("\" " + ACTION_ATTR_NAME + "=\"").append(getAction())
+		    .append(isSipCall() ? "\" " + DESTJID_ATTR_NAME + "=\"" + getDestjid() : "")
+		    .append(isOnHold() != null ? "\" " + HOLDUSER_ATTR_NAME + "=\"" + getHoldUser() : "")
 		    .append(StringUtils.isNullOrEmpty(value) ? 
-		    		"'>" : "'><" + DATA_ELEMENT_NAME + ">" + getValue() + "</" + DATA_ELEMENT_NAME + ">")
+		    		"\">" : "\"><" + DATA_ELEMENT_NAME + ">" + getValue() + "</" + DATA_ELEMENT_NAME + ">")
 		    .append("</" + INFO_ELEMENT_NAME + ">").append("</media>")
 		    .append("</" + QUERY_ELEMENT_NAME + ">");
 
-		//logger.info("PrivateIQ Child XML: " + output.toString());
-
 		return output.toString();
 	}
+	
+	/**
+	 * Convert org.xmpp.packet.IQ to PrivateIQ.
+	 *
+	 * @param iq the org.xmpp.packet.IQ
+	 * @return the private iq
+	 */
+	public static PrivateIQ convert(IQ iq)
+	{
+		PrivateIQ privateIQ = new PrivateIQ();
+		String iqXml = iq.toXML();
+		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder dBuilder;
+		try {
+			dBuilder = dbFactory.newDocumentBuilder();
 
+			InputSource is = new InputSource();
+			is.setCharacterStream(new StringReader(iqXml));
+			Document doc = dBuilder.parse(is);
+			doc.getDocumentElement().normalize();
+
+			Node iqNode = doc.getElementsByTagName("iq").item(0);
+			Element iqElement = (Element) iqNode;
+			privateIQ.setTo(iqElement.getAttribute("to"));
+			privateIQ.setFrom(iqElement.getAttribute("from"));
+			privateIQ.setType(iqElement.getAttribute("type").equalsIgnoreCase("set")
+					? org.jivesoftware.smack.packet.IQ.Type.SET : org.jivesoftware.smack.packet.IQ.Type.GET);
+
+			Node queryNode = iqElement.getElementsByTagName(QUERY_ELEMENT_NAME).item(0);
+			Element queryElement = (Element) queryNode;
+			Node mediaNode = queryElement.getElementsByTagName(MEDIA_ELEMENT_NAME).item(0);
+			Element mediaElement = (Element) mediaNode;
+
+			Node infoNode = mediaElement.getElementsByTagName(INFO_ELEMENT_NAME).item(0);
+			Element infoElement = (Element) infoNode;
+			privateIQ.setJabberid(infoElement.getAttribute(ROUTING_ATTR_NAME));
+
+			String media = infoElement.getAttribute(MEDIA_ATTR_NAME);
+			if (media.equals(mediaValues.AudioVideo.toString()))
+			{
+				privateIQ.setAudioSupport(true);
+				privateIQ.setVideoSupport(true);
+			}
+			else if (media.equals(mediaValues.Audio.toString()))
+			{
+				privateIQ.setAudioSupport(true);
+				privateIQ.setVideoSupport(false);
+			}
+			else if (media.equals(mediaValues.Video.toString()))
+			{
+				privateIQ.setAudioSupport(false);
+				privateIQ.setVideoSupport(true);
+			}
+			else
+			{
+				privateIQ.setAudioSupport(false);
+				privateIQ.setVideoSupport(false);
+			}
+
+			privateIQ.setConnected(infoElement.getAttribute(ACTION_ATTR_NAME)
+				.equals("connected") ? true : false);
+
+			Node dataNode = mediaElement.getElementsByTagName(DATA_ELEMENT_NAME).item(0);
+			privateIQ.setValue(dataNode.getTextContent());
+		}
+		catch (ParserConfigurationException e)
+		{
+			logger.error("Error parsing private iq xml : ", e);
+		}
+		catch (SAXException e)
+		{
+			logger.error("Error parsing xml : ", e);
+		}
+		catch (IOException e)
+		{
+			logger.error("Error reading string input : ", e);
+		}
+		
+		return privateIQ;
+	}
+	
 	/*
 	 * (non-Javadoc)
 	 * 

@@ -242,6 +242,7 @@ public class FocusComponent
         try
         {
             org.jivesoftware.smack.packet.IQ smackIq = IQUtils.convert(iq);
+            logger.info("IQ received : " + iq.toXML());
 
             if (smackIq instanceof ConferenceIq)
             {
@@ -299,7 +300,7 @@ public class FocusComponent
             }
 	    else if (smackIq instanceof PrivateIQ) 
 	    {
-		org.jivesoftware.smack.packet.IQ response = handlePrivateIQ((PrivateIQ) smackIq);
+	        org.jivesoftware.smack.packet.IQ response = handlePrivateIQ(PrivateIQ.convert(iq));
 		return response != null ? IQUtils.convert(response) : null;
 	    }
             else
