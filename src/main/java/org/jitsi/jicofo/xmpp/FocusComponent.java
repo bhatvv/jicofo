@@ -242,7 +242,6 @@ public class FocusComponent
         try
         {
             org.jivesoftware.smack.packet.IQ smackIq = IQUtils.convert(iq);
-            logger.info("IQ received : " + iq.toXML());
 
             if (smackIq instanceof ConferenceIq)
             {
