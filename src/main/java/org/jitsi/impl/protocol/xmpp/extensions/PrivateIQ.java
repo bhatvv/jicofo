@@ -49,9 +49,6 @@ public class PrivateIQ extends AbstractIQ {
 	/** Attribute name holdUser. */
 	public static final String HOLDUSER_ATTR_NAME = "holdUser";
 	
-	/** Attribute name value of data. */
-	public static final String VALUE_ATTR_NAME = "value";
-	
 	/** The jid. */
 	private String jid;
 
@@ -145,9 +142,9 @@ public class PrivateIQ extends AbstractIQ {
 		    .append("' " + ACTION_ATTR_NAME + "='").append(getAction())
 		    .append(isSipCall() ? "' " + DESTJID_ATTR_NAME + "='" + getDestjid() : "")
 		    .append(isOnHold() != null ? "' " + HOLDUSER_ATTR_NAME + "='" + getHoldUser() : "")
-		    .append("' />").append("</media>")
 		    .append(StringUtils.isNullOrEmpty(value) ? 
-		    		"" : "<" + DATA_ELEMENT_NAME + " " + VALUE_ATTR_NAME + "='" + getValue() + "' />")
+		    		"'>" : "'><" + DATA_ELEMENT_NAME + ">" + getValue() + "</" + DATA_ELEMENT_NAME + ">")
+		    .append("</" + INFO_ELEMENT_NAME + ">").append("</media>")
 		    .append("</" + QUERY_ELEMENT_NAME + ">");
 
 		//logger.info("PrivateIQ Child XML: " + output.toString());

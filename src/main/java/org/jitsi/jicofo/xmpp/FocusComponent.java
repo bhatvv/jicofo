@@ -526,6 +526,8 @@ public class FocusComponent
 	    response.setConnected(privateIQ.isConnected());
 	    response.setJabberid(privateIQ.getJabberid());
 	    
+	    logger.info("Stats value : " + privateIQ.getValue());
+	    
 	    logger.info("PrivateIQ response sent : " + response.toXML());
 
 	    return response;
