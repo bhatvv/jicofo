@@ -150,7 +150,7 @@ public class PrivateIQ extends AbstractIQ {
 		    		"" : "<" + DATA_ELEMENT_NAME + " " + VALUE_ATTR_NAME + "='" + getValue() + "' />")
 		    .append("</" + QUERY_ELEMENT_NAME + ">");
 
-		logger.info("PrivateIQ Child XML: " + output.toString());
+		//logger.info("PrivateIQ Child XML: " + output.toString());
 
 		return output.toString();
 	}

@@ -2065,7 +2065,8 @@ public class JitsiMeetConference
 
 	    XmppProtocolProvider provider = (XmppProtocolProvider) getXmppProvider();
 	    provider.getConnection().sendPacket(privateIQ);
-
+	    
+	    logger.info("PrivateIQ sent : " + privateIQ.toXML());
 	    }
     }
     
@@ -2096,8 +2097,7 @@ public class JitsiMeetConference
     	    XmppProtocolProvider provider = (XmppProtocolProvider) getXmppProvider();
     	    provider.getConnection().sendPacket(privateIQ);
     	    
-    	    logger.info("Martin...Private IQ :" + privateIQ.toXML());
-
+    	    logger.info("Private hold IQ sent : " + privateIQ.toXML());
     	}
     }
 

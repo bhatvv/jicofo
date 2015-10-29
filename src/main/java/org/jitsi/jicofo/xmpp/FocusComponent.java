@@ -510,16 +510,24 @@ public class FocusComponent
      *            the private iq
      * @return the org.jivesoftware.smack.packet. iq
      */
-    private org.jivesoftware.smack.packet.IQ handlePrivateIQ(PrivateIQ privateIQ) {
+    private org.jivesoftware.smack.packet.IQ handlePrivateIQ(PrivateIQ privateIQ)
+    {
+    	logger.info("PrivateIQ received : " + privateIQ.toXML());
+        
     	PrivateIQ response = new PrivateIQ();
-	response.setType(org.jivesoftware.smack.packet.IQ.Type.RESULT);
-	response.setPacketID(privateIQ.getPacketID());
-	response.setFrom(privateIQ.getTo());
-	response.setTo(privateIQ.getFrom());
-	response.setRoom(privateIQ.getRoom());
+	    response.setType(org.jivesoftware.smack.packet.IQ.Type.RESULT);
+	    response.setPacketID(privateIQ.getPacketID());
+	    response.setFrom(privateIQ.getTo());
+	    response.setTo(privateIQ.getFrom());
+	    response.setRoom(privateIQ.getRoom());
+	    response.setJid(focusAuthJid);
+	    response.setAudioSupport(privateIQ.hasAudioSupport());
+	    response.setVideoSupport(privateIQ.hasVideoSupport());
+	    response.setConnected(privateIQ.isConnected());
+	    response.setJabberid(privateIQ.getJabberid());
+	    
+	    logger.info("PrivateIQ response sent : " + response.toXML());
 
-	response.setJid(focusAuthJid);
-
-	return response;
+	    return response;
     }
 }
