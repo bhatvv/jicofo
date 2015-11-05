@@ -157,6 +157,12 @@ public class JitsiMeetConference
         = new CopyOnWriteArrayList<Participant>();
 
     /**
+     * The mapping between participant and its hold state
+     */
+    
+    private static Map<Participant, Boolean> holdMap = null;
+    
+    /**
      * Information about Jitsi Meet conference services like videobridge,
      * SIP gateway, Jirecon.
      */
@@ -612,8 +618,7 @@ public class JitsiMeetConference
     private void discoverFeaturesAndInvite(Participant     newParticipant,
                                            String          address,
                                            boolean[]       startMuted)
-    { 
-    	
+    {    	
         // Feature discovery
         List<String> features
             = DiscoveryUtil.discoverParticipantFeatures(
@@ -626,13 +631,49 @@ public class JitsiMeetConference
         String endpoint = address.split("/")[1];
         logger.audit("RTCServer:" +System.getProperty(FocusManager.HOSTNAME_PNAME)+", MucID:" +roomName + ", RoutingID :" +endpoint +", Message:"+address + " has bundle ? " + newParticipant.hasBundleSupport());
         
-        
         // Store instance here as it is set to null when conference is disposed
         ColibriConference conference = this.colibriConference;
         List<ContentPacketExtension> offer = null;
+        String ownerJid = null;
      	
+        /*if(newParticipant!=null)
+        {
+        	holdMap.put(newParticipant,false);
+        }
+        for (Participant p: holdMap.keySet())
+        {
+	        logger.info(p+ " : " + holdMap.get(p));
+	    }
+        */
         try
         {
+        	if(participants.size()>=3)
+		        {
+		        	for(Participant p: participants)
+		        	{	
+		        		if(p.getChatMember().getRole().getRoleName().equalsIgnoreCase("OWNER"))
+		        		{
+		        			ownerJid = p.getChatMember().getJabberID();
+		        		}
+		        		
+		        		if((!(p.getChatMember().getRole().getRoleName().equalsIgnoreCase("OWNER")))&& (!(p.getEndpointId().equals(newParticipant.getEndpointId()))))
+		        		{	
+		        			
+		        			/*if(holdMap.get(p) == false)
+		        			{*/
+		        				
+		        			    logger.info("Endpoint Id of participant which will go on hold:" +p.getEndpointId());
+		        			    String toBeHoldJid = newParticipant.getChatMember().getJabberID();
+		        			    handleHoldRequest(ownerJid, toBeHoldJid, true);
+		        			    
+		        			/*}//map end
+*/		        		
+		        		}//owner & new participant check
+		       
+		        	}//participant list
+		        	
+		       }//participant_size >= 3
+		        	
 			offer = createOffer(newParticipant);
 			      
 		    if (offer == null)
@@ -679,6 +720,7 @@ public class JitsiMeetConference
 	            newParticipant.getColibriChannelsInfo());
 	    }
    }
+    
         
        
     /**
@@ -2012,6 +2054,8 @@ public class JitsiMeetConference
 		{
 		    participant.setHold(doHold);
 		    sendHoldPrivateIQ(principal, participant, doHold);
+		   // holdMap.put(participant,true);
+		    
 		}
 		
 		return succeeded;
